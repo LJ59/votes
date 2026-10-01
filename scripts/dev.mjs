@@ -1,0 +1,10 @@
+import http from 'node:http';
+import {readFile} from 'node:fs/promises';
+import {resolve,extname} from 'node:path';
+import {createApi} from '../lib/api.mjs';
+import {memoryStore} from '../lib/memory.mjs';
+import {hashPassword} from '../lib/auth.mjs';
+const demo=process.argv.includes('--demo');
+const env=demo?{ADMIN_PASSWORD_HASH:hashPassword('Demo-local-2026','demo'),SESSION_SECRET:'local-preview-secret-only-32-characters'}:process.env;
+const api=createApi(memoryStore(),env);const root=resolve('public');
+http.createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost:8888');if(url.pathname==='/.netlify/functions/api'){const chunks=[];for await(const c of req)chunks.push(c);const r=await api(new Request(url,{method:req.method,headers:req.headers,...(req.method==='POST'?{body:Buffer.concat(chunks)}:{})}));res.writeHead(r.status,Object.fromEntries(r.headers));const cookies=r.headers.getSetCookie();if(cookies.length)res.setHeader('set-cookie',cookies);res.end(await r.text());return;}const path=resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));if(!path.startsWith(root+'/'))throw Error();const data=await readFile(path);res.setHeader('content-type',({'.html':'text/html; charset=utf-8','.css':'text/css','.js':'text/javascript'})[extname(path)]||'application/octet-stream');res.end(data);}catch{res.writeHead(404);res.end('Introuvable');}}).listen(8888,()=>console.log('Aperçu http://localhost:8888 — données en mémoire, effacées à l’arrêt.'+(demo?' Administration : Demo-local-2026':'')));

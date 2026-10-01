@@ -1,0 +1,4 @@
+export const $=id=>document.getElementById(id);
+export async function api(action='state',body){const r=await fetch('/.netlify/functions/api?action='+action,{credentials:'same-origin',cache:'no-store',...(body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{})});let d;try{d=await r.json();}catch{throw Error('Le serveur est inaccessible. Vérifiez le déploiement des fonctions Netlify.');}if(!r.ok)throw Object.assign(Error(d.error||'Une erreur est survenue.'),{status:r.status});return d;}
+export function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
+let timer;export function toast(text){$('toast').textContent=text;$('toast').hidden=false;clearTimeout(timer);timer=setTimeout(()=>$('toast').hidden=true,3000);}
